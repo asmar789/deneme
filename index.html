@@ -39,7 +39,7 @@
         body {
             background-color: #0B0C10;
             color: #FFFFFF;
-            -webkit-tap-highlight-color: transparent; /* Mobil tıklama mavi gölgesini kaldırır */
+            -webkit-tap-highlight-color: transparent;
         }
         .stitch-border {
             border: 1px solid rgba(197, 168, 128, 0.12);
@@ -48,7 +48,6 @@
             border-color: #C5A880;
             outline: none;
         }
-        /* Dokunma hissini hızlandırmak için aktif basılma efekti */
         .mobile-touch-active:active {
             transform: scale(0.96);
             opacity: 0.9;
@@ -99,8 +98,9 @@
 
             const [editingVehicle, setEditingVehicle] = useState(null);
             const [vehName, setVehName] = useState('');
-            const [vehImg, setVehImg] = useState('');
+            const [vehImg, setVehImg] = useState(''); // Artık burası Base64 resim verisini tutacak
             const [vehDesc, setVehDesc] = useState('');
+            const [uploading, setUploading] = useState(false);
 
             useEffect(() => {
                 const handleHashChange = () => {
@@ -149,6 +149,20 @@
                 }, 100);
             }, []);
 
+            // Telefondan fotoğraf seçildiğinde çalışan fonksiyon
+            const handleFileChange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                setUploading(true);
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setVehImg(reader.result); // Resmi base64 formatına çevirip state'e atıyoruz
+                    setUploading(false);
+                };
+                reader.readAsDataURL(file);
+            };
+
             const handleLogin = async (e) => {
                 e.preventDefault();
                 setLoginError('');
@@ -170,6 +184,10 @@
 
             const saveVehicle = async (e) => {
                 e.preventDefault();
+                if(!vehImg) {
+                    alert("Lütfen araç için bir fotoğraf yükleyin!");
+                    return;
+                }
                 const { db, collection, addDoc, doc, updateDoc } = window.FirebaseBridge;
                 const data = { name: vehName, image: vehImg, description: vehDesc };
 
@@ -196,7 +214,6 @@
                 alert('Numaralar başarıyla güncellendi!');
             };
 
-            // Temiz numara formatı oluşturucu (Uygulama tetiklemeleri için)
             const getCleanNumber = (num) => {
                 let formatted = num.replace(/\s+/g, '');
                 if(!formatted.startsWith('+') && !formatted.startsWith('00')) {
@@ -213,6 +230,18 @@
 
             const cleanPhone = getCleanNumber(settings.phone);
             const cleanWhatsapp = getCleanNumber(settings.whatsapp).replace('+', '');
+
+            // Firebase boşsa gösterilecek varsayılan araç listesi
+            const defaultVehicles = [
+                {
+                    id: "default-1",
+                    name: "MERCEDES VITO VIP (ÖRNEK)",
+                    image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=600",
+                    description: "Ultra Lüks VIP Tasarım\n9+1 Geniş Yolcu Kapasitesi\nBuzdolabı ve TV Eğlence Sistemi\nÜcretsiz Wi-Fi ve İkramlar"
+                }
+            ];
+
+            const displayVehicles = vehicles.length > 0 ? vehicles : defaultVehicles;
 
             if (loading) {
                 return (
@@ -255,7 +284,7 @@
                                 <h1 className="text-base font-bold font-montserrat text-stitch-gold">VIP PANEL</h1>
                                 <p className="text-[11px] text-stitch-text-muted">{user?.email}</p>
                             </div>
-                            <button onClick={handleLogout} className="bg-red-600/20 text-red-200 border border-red-600/40 text-xs font-bold px-3 py-1.5 rounded-lg transition-all">ÇIKIŞ</button>
+                            <button onClick={handleLogout} className="bg-red-600/20 text-red-200 border border-red-600/40 text-xs font-bold px-3 py-1.5 rounded-lg transition-all">ÇAKIŞ</button>
                         </header>
 
                         <div className="flex-1 max-w-6xl w-full mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -265,7 +294,26 @@
                                 </h3>
                                 <form onSubmit={saveVehicle} className="space-y-4">
                                     <input type="text" required className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" placeholder="Araç Adı" value={vehName} onChange={e => setVehName(e.target.value)} />
-                                    <input type="url" required className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" placeholder="Görsel URL" value={vehImg} onChange={e => setVehImg(e.target.value)} />
+                                    
+                                    {/* FOTOĞRAF YÜKLEME ALANI */}
+                                    <div className="space-y-2">
+                                        <label className="block text-[11px] text-stitch-text-muted uppercase font-bold tracking-wider">Araç Fotoğrafı</label>
+                                        <div className="flex items-center justify-center w-full">
+                                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-neutral-800 border-dashed rounded-lg cursor-pointer bg-stitch-dark hover:border-stitch-gold transition-colors p-2">
+                                                {vehImg ? (
+                                                    <img src={vehImg} className="w-full h-full object-cover rounded-lg" />
+                                                ) : (
+                                                    <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
+                                                        <i className={`fa-solid ${uploading ? 'fa-spinner animate-spin' : 'fa-cloud-arrow-up'} text-xl text-stitch-gold mb-2`}></i>
+                                                        <p className="text-xs text-white font-medium">Fotoğraf Seç / Çek</p>
+                                                        <p className="text-[10px] text-stitch-text-muted mt-1">Doğrudan galeriden yükleyin</p>
+                                                    </div>
+                                                )}
+                                                <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                                            </label>
+                                        </div>
+                                    </div>
+
                                     <textarea required rows="3" className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" placeholder="Özellikler (Her satıra bir özellik)" value={vehDesc} onChange={e => setVehDesc(e.target.value)}></textarea>
                                     <button type="submit" className="w-full bg-stitch-gold text-black text-xs font-bold py-2.5 rounded-lg uppercase tracking-wider mobile-touch-active">KAYDET</button>
                                 </form>
@@ -282,8 +330,8 @@
                                 </div>
 
                                 <div className="bg-stitch-card stitch-border p-5 rounded-xl">
-                                    <h3 className="text-xs font-bold font-montserrat text-stitch-gold uppercase border-b border-neutral-800 pb-2 mb-4">Mevcut Araçlar</h3>
-                                    <div className="space-y-2">
+                                    <h3 className="text-xs font-bold font-montserrat text-stitch-gold uppercase border-b border-neutral-800 pb-2 mb-4">Mevcut Araçlar ({vehicles.length})</h3>
+                                    <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                                         {vehicles.map(v => (
                                             <div key={v.id} className="flex items-center gap-3 bg-stitch-dark p-2 rounded-lg">
                                                 <img src={v.image} className="w-12 h-9 object-cover rounded bg-neutral-800" />
@@ -319,7 +367,6 @@
                                 Konforlu ve güvenli yolculuk. Müşteri memnuniyeti odaklı, lüks ve kaliteli transfer çözümleri sunuyoruz.
                             </p>
                             
-                            {/* Ana Gövde Hızlı Aksiyon Butonları (Dokunma Tepkisi Hızlandırılmış) */}
                             <div className="pt-4 flex flex-col sm:flex-row justify-center items-center gap-3 max-w-sm mx-auto w-full px-2">
                                 <a href={`tel:${cleanPhone}`} className="w-full bg-stitch-gold text-black font-bold text-xs uppercase tracking-wider py-3.5 px-4 rounded-xl transition-transform active:scale-95 flex items-center justify-center gap-2 mobile-touch-active shadow-lg">
                                     <i className="fa-solid fa-phone text-sm"></i> Hemen Ara
@@ -331,68 +378,60 @@
                         </div>
                     </section>
 
-                    {/* HİZMETLERİMİZ BÖLÜMÜ */}
-                    <section className="py-12 max-w-6xl w-full mx-auto px-4">
+                    {/* HİZMETLERİMİZ BÖLÜMÜ (3 ADET) */}
+                    <section className="py-12 max-w-5xl w-full mx-auto px-4">
                         <div className="text-center mb-8">
-           <h2 className="text-lg font-bold font-montserrat tracking-wider uppercase text-white">HİZMETLERİMİZ</h2>
+                            <h2 className="text-lg font-bold font-montserrat tracking-wider uppercase text-white">HİZMETLERİMİZ</h2>
                             <div className="w-8 h-0.5 bg-stitch-gold mx-auto mt-1.5"></div>
                         </div>
 
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                            <div className="bg-stitch-card stitch-border rounded-xl p-4 text-center space-y-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="bg-stitch-card stitch-border rounded-xl p-5 text-center space-y-2">
                                 <i className="fa-solid fa-plane-departure text-xl text-stitch-gold"></i>
-                                <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">Havalimanı</h3>
-                                <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Zamanında ve konforlu karşılama.</p>
+                                <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">Havalimanı Transferi</h3>
+                                <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Zamanında ve konforlu karşılama ve ulaşım hizmetleri.</p>
                             </div>
-                            <div className="bg-stitch-card stitch-border rounded-xl p-4 text-center space-y-2">
+                            <div className="bg-stitch-card stitch-border rounded-xl p-5 text-center space-y-2">
                                 <i className="fa-solid fa-road text-xl text-stitch-gold"></i>
-                                <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">Şehirler Arası</h3>
-                                <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Her noktaya güvenli uzun yol.</p>
+                                <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">Şehirler Arası Transfer</h3>
+                                <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Türkiye'nin her noktasına konforlu uzun yol seyahati.</p>
                             </div>
-                            <div className="bg-stitch-card stitch-border rounded-xl p-4 text-center space-y-2">
+                            <div className="bg-stitch-card stitch-border rounded-xl p-5 text-center space-y-2">
                                 <i className="fa-solid fa-crown text-xl text-stitch-gold"></i>
-                                <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">VIP Transfer</h3>
-                                <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Kişiye özel ultra lüks dizayn.</p>
-                            </div>
-                            <div className="bg-stitch-card stitch-border rounded-xl p-4 text-center space-y-2">
-                                <i className="fa-solid fa-user-tie text-xl text-stitch-gold"></i>
-                                <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">Şoförlü Tahsis</h3>
-                                <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Profesyonel şoför kadrosu.</p>
+                                <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">Ultra VIP Hizmet</h3>
+                                <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Kişiye özel, lüks donanımlı araçlarla üst düzey seyahat keyfi.</p>
                             </div>
                         </div>
                     </section>
 
-                    {/* ARAÇLARIMIZ BÖLÜMÜ */}
+                    {/* ARAÇLARIMIZ BÖLÜMÜ - SINIRSIZ / DİNAMİK YAPI */}
                     <section className="py-12 bg-stitch-card border-y border-neutral-900 px-4">
-                        <div className="max-w-4xl w-full mx-auto">
+                        <div className="max-w-5xl w-full mx-auto">
                             <div className="text-center mb-8">
                                 <h2 className="text-lg font-bold font-montserrat tracking-wider uppercase text-white">ARAÇLARIMIZ</h2>
                                 <div className="w-8 h-0.5 bg-stitch-gold mx-auto mt-1.5"></div>
                             </div>
 
-                            {vehicles.length === 0 ? (
-                                <p className="text-xs text-stitch-text-muted text-center py-4">Lüks araç filomuz yükleniyor...</p>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {vehicles.slice(0, 2).map(v => (
-                                        <div key={v.id} className="bg-stitch-dark stitch-border rounded-xl p-3 flex flex-col sm:flex-row gap-4 items-center">
-                                            <div className="w-full sm:w-2/5 aspect-[4/3] bg-neutral-900 rounded-lg overflow-hidden flex-shrink-0">
-                                                <img src={v.image} className="w-full h-full object-cover" alt={v.name} onError={(e)=>{e.target.src='https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=500'}} />
-                                            </div>
-                                            <div className="w-full sm:w-3/5 space-y-1.5 self-start sm:self-center">
-                                                <h3 className="font-bold font-montserrat text-xs text-stitch-gold uppercase tracking-wide">{v.name}</h3>
-                                                <ul className="text-[11px] text-stitch-text-muted space-y-1 font-light">
-                                                    {v.description.split('\n').map((line, idx) => (
-                                                        <li key={idx} className="flex items-center gap-1.5 truncate">
-                                                            <i className="fa-regular fa-circle-check text-stitch-gold text-[9px]"></i> {line}
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
+                            {/* 2 Sınırı Kalktı! Kaç araba eklenirse eklensin burada otomatik şıkça hizalanacak */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {displayVehicles.map(v => (
+                                    <div key={v.id} className="bg-stitch-dark stitch-border rounded-xl p-3 flex flex-col sm:flex-row gap-4 items-center">
+                                        <div className="w-full sm:w-2/5 aspect-[4/3] bg-neutral-900 rounded-lg overflow-hidden flex-shrink-0">
+                                            <img src={v.image} className="w-full h-full object-cover" alt={v.name} onError={(e)=>{e.target.src='https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=500'}} />
                                         </div>
-                                    ))}
-                                </div>
-                            )}
+                                        <div className="w-full sm:w-3/5 space-y-1.5 self-start sm:self-center">
+                                            <h3 className="font-bold font-montserrat text-xs text-stitch-gold uppercase tracking-wide">{v.name}</h3>
+                                            <ul className="text-[11px] text-stitch-text-muted space-y-1 font-light">
+                                                {v.description.split('\n').map((line, idx) => (
+                                                    <li key={idx} className="flex items-center gap-1.5 truncate">
+                                                        <i className="fa-regular fa-circle-check text-stitch-gold text-[9px]"></i> {line}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </section>
 
@@ -403,7 +442,7 @@
                         </p>
                     </footer>
 
-                    {/* MOBİL ERGONOMİK SABİT ALT BAR (STIKY BOTTOM BUTTONS) */}
+                    {/* MOBİL SABİT ALT BAR */}
                     <div className="fixed bottom-0 left-0 right-0 z-50 bg-stitch-card/90 backdrop-blur-md border-t border-neutral-800/80 p-3 flex gap-3 md:hidden shadow-[0_-8px_24px_rgba(0,0,0,0.5)]">
                         <a href={`tel:${cleanPhone}`} className="flex-1 bg-neutral-900 border border-neutral-800 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 mobile-touch-active shadow-md">
                             <i className="fa-solid fa-phone text-stitch-gold text-sm animate-pulse"></i> Arama Yap
