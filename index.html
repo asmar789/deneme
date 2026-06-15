@@ -2,13 +2,13 @@
 <html lang="tr">
 <head>
     <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
     <title>VIP Transfer | Lüks ve Konforlu Yolculuk</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <!-- Google Fonts & FontAwesome Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     
     <!-- React & Babel -->
@@ -39,18 +39,23 @@
         body {
             background-color: #0B0C10;
             color: #FFFFFF;
+            -webkit-tap-highlight-color: transparent; /* Mobil tıklama mavi gölgesini kaldırır */
         }
         .stitch-border {
-            border: 1px solid rgba(197, 168, 128, 0.15);
+            border: 1px solid rgba(197, 168, 128, 0.12);
         }
         .stitch-border-focus:focus {
             border-color: #C5A880;
             outline: none;
-            box-shadow: 0 0 0 2px rgba(197, 168, 128, 0.2);
+        }
+        /* Dokunma hissini hızlandırmak için aktif basılma efekti */
+        .mobile-touch-active:active {
+            transform: scale(0.96);
+            opacity: 0.9;
         }
     </style>
 </head>
-<body class="font-sans antialiased">
+<body class="font-sans antialiased select-none md:select-text">
 
     <div id="root"></div>
 
@@ -148,10 +153,6 @@
                 e.preventDefault();
                 setLoginError('');
                 const emailInput = loginEmail.trim().toLowerCase();
-                if (!emailInput.includes('admin')) {
-                    setLoginError('Yetkili bir @admin hesabı girmelisiniz.');
-                    return;
-                }
                 try {
                     const { auth, signInWithEmailAndPassword } = window.FirebaseBridge;
                     await signInWithEmailAndPassword(auth, emailInput, loginPassword);
@@ -195,123 +196,103 @@
                 alert('Numaralar başarıyla güncellendi!');
             };
 
+            // Temiz numara formatı oluşturucu (Uygulama tetiklemeleri için)
+            const getCleanNumber = (num) => {
+                let formatted = num.replace(/\s+/g, '');
+                if(!formatted.startsWith('+') && !formatted.startsWith('00')) {
+                    if(formatted.startsWith('0')) {
+                        formatted = '+90' + formatted.substring(1);
+                    } else if(!formatted.startsWith('90')) {
+                        formatted = '+90' + formatted;
+                    } else {
+                        formatted = '+' + formatted;
+                    }
+                }
+                return formatted;
+            };
+
+            const cleanPhone = getCleanNumber(settings.phone);
+            const cleanWhatsapp = getCleanNumber(settings.whatsapp).replace('+', '');
+
             if (loading) {
                 return (
                     <div className="min-h-screen flex items-center justify-center bg-stitch-dark">
                         <div className="text-center">
-                            <i className="fa-solid fa-spinner animate-spin text-4xl text-stitch-gold mb-4"></i>
-                            <p className="font-montserrat tracking-widest text-sm text-stitch-text-muted">YÜKLENİYOR...</p>
+                            <i className="fa-solid fa-spinner animate-spin text-3xl text-stitch-gold mb-3"></i>
+                            <p className="font-montserrat tracking-widest text-xs text-stitch-text-muted">YÜKLENİYOR...</p>
                         </div>
                     </div>
                 );
             }
 
+            // --- ADMIN LOGIN ---
             if (view === 'admin-login') {
                 return (
                     <div className="min-h-screen flex items-center justify-center p-4 bg-stitch-dark">
-                        <div className="w-full max-w-md bg-stitch-card stitch-border rounded-xl p-8 shadow-2xl">
-                            <h2 className="text-2xl font-black font-montserrat text-center text-stitch-gold tracking-wide mb-2">YÖNETİCİ GİRİŞİ</h2>
-                            <p className="text-xs text-center text-stitch-text-muted mb-6 uppercase tracking-widest">Sadece @admin yetkilileri erişebilir</p>
-                            
+                        <div className="w-full max-w-md bg-stitch-card stitch-border rounded-xl p-6 shadow-2xl">
+                            <h2 className="text-xl font-bold font-montserrat text-center text-stitch-gold tracking-wide mb-6">YÖNETİCİ GİRİŞİ</h2>
                             {loginError && <div className="bg-red-900/30 border border-red-500 text-red-200 p-3 rounded-lg text-xs text-center mb-4">{loginError}</div>}
-                            
                             <form onSubmit={handleLogin} className="space-y-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-stitch-gold uppercase mb-2">E-Posta Adresi</label>
-                                    <input type="email" required className="w-full bg-stitch-dark border border-neutral-800 text-white rounded-lg px-4 py-3 text-sm stitch-border-focus" placeholder="isim@admin" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} />
+                                    <input type="email" required className="w-full bg-stitch-dark border border-neutral-800 text-white rounded-lg px-4 py-3 text-sm stitch-border-focus" placeholder="E-Posta" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-bold text-stitch-gold uppercase mb-2">Şifre</label>
-                                    <input type="password" required className="w-full bg-stitch-dark border border-neutral-800 text-white rounded-lg px-4 py-3 text-sm stitch-border-focus" placeholder="••••••••" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} />
+                                    <input type="password" required className="w-full bg-stitch-dark border border-neutral-800 text-white rounded-lg px-4 py-3 text-sm stitch-border-focus" placeholder="Şifre" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} />
                                 </div>
-                                <button type="submit" className="w-full bg-stitch-gold hover:bg-stitch-gold-hover text-black font-bold py-3 px-4 rounded-lg text-sm font-montserrat tracking-wider transition-all">GİRİŞ YAP</button>
+                                <button type="submit" className="w-full bg-stitch-gold text-black font-bold py-3 rounded-lg text-xs font-montserrat tracking-wider uppercase transition-all mobile-touch-active">GİRİŞ YAP</button>
                             </form>
                         </div>
                     </div>
                 );
             }
 
+            // --- ADMIN PANEL ---
             if (view === 'admin-panel') {
                 return (
-                    <div className="min-h-screen bg-stitch-dark flex flex-col">
-                        <header className="bg-stitch-card border-b border-neutral-800 py-4 px-6 flex justify-between items-center">
+                    <div className="min-h-screen bg-stitch-dark flex flex-col pb-24 md:pb-0">
+                        <header className="bg-stitch-card border-b border-neutral-800 py-4 px-4 flex justify-between items-center">
                             <div>
-                                <h1 className="text-lg font-black font-montserrat tracking-wider text-stitch-gold">VIP TRANSFER PANEL</h1>
-                                <p className="text-xs text-stitch-text-muted">Aktif Oturum: {user?.email}</p>
+                                <h1 className="text-base font-bold font-montserrat text-stitch-gold">VIP PANEL</h1>
+                                <p className="text-[11px] text-stitch-text-muted">{user?.email}</p>
                             </div>
-                            <button onClick={handleLogout} className="bg-red-600/20 hover:bg-red-600 text-red-200 hover:text-white border border-red-600/40 text-xs font-bold px-4 py-2 rounded-lg transition-all flex items-center gap-2">
-                                <i className="fa-solid fa-right-from-bracket"></i> ÇIKIŞ
-                            </button>
+                            <button onClick={handleLogout} className="bg-red-600/20 text-red-200 border border-red-600/40 text-xs font-bold px-3 py-1.5 rounded-lg transition-all">ÇIKIŞ</button>
                         </header>
 
-                        <div className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div className="bg-stitch-card stitch-border p-6 rounded-xl h-fit">
-                                <h3 className="text-sm font-bold font-montserrat text-stitch-gold uppercase border-b border-neutral-800 pb-3 mb-4">
+                        <div className="flex-1 max-w-6xl w-full mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="bg-stitch-card stitch-border p-5 rounded-xl h-fit">
+                                <h3 className="text-xs font-bold font-montserrat text-stitch-gold uppercase border-b border-neutral-800 pb-2 mb-4">
                                     {editingVehicle ? 'Aracı Düzenle' : 'Yeni Araç Ekle'}
                                 </h3>
                                 <form onSubmit={saveVehicle} className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-semibold text-stitch-text-muted uppercase mb-1">Araç Adı</label>
-                                        <input type="text" required className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" placeholder="MERCEDES TRANSPORTER VIP" value={vehName} onChange={e => setVehName(e.target.value)} />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-stitch-text-muted uppercase mb-1">Görsel Bağlantısı (URL)</label>
-                                        <input type="url" required className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" placeholder="https://site.com/arac.jpg" value={vehImg} onChange={e => setVehImg(e.target.value)} />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-semibold text-stitch-text-muted uppercase mb-1">Özellikler (Satır satır yazın)</label>
-                                        <textarea required rows="4" className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" placeholder="Siyah Dış Tasarım&#10;VIP İç Dizayn" value={vehDesc} onChange={e => setVehDesc(e.target.value)}></textarea>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button type="submit" className="flex-1 bg-stitch-gold hover:bg-stitch-gold-hover text-black text-xs font-bold py-2.5 rounded-lg uppercase tracking-wider transition-all">
-                                            {editingVehicle ? 'Güncelle' : 'Kaydet'}
-                                        </button>
-                                        {editingVehicle && (
-                                            <button type="button" onClick={() => { setEditingVehicle(null); setVehName(''); setVehImg(''); setVehDesc(''); }} className="bg-neutral-800 text-white text-xs px-3 rounded-lg">İptal</button>
-                                        )}
-                                    </div>
+                                    <input type="text" required className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" placeholder="Araç Adı" value={vehName} onChange={e => setVehName(e.target.value)} />
+                                    <input type="url" required className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" placeholder="Görsel URL" value={vehImg} onChange={e => setVehImg(e.target.value)} />
+                                    <textarea required rows="3" className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" placeholder="Özellikler (Her satıra bir özellik)" value={vehDesc} onChange={e => setVehDesc(e.target.value)}></textarea>
+                                    <button type="submit" className="w-full bg-stitch-gold text-black text-xs font-bold py-2.5 rounded-lg uppercase tracking-wider mobile-touch-active">KAYDET</button>
                                 </form>
                             </div>
 
-                            <div className="md:col-span-2 space-y-8">
-                                <div className="bg-stitch-card stitch-border p-6 rounded-xl">
-                                    <h3 className="text-sm font-bold font-montserrat text-stitch-gold uppercase border-b border-neutral-800 pb-3 mb-4">Numara Güncelleme</h3>
+                            <div className="md:col-span-2 space-y-6">
+                                <div className="bg-stitch-card stitch-border p-5 rounded-xl">
+                                    <h3 className="text-xs font-bold font-montserrat text-stitch-gold uppercase border-b border-neutral-800 pb-2 mb-4">Numaralar</h3>
                                     <form onSubmit={saveContact} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-stitch-text-muted uppercase mb-1">Telefon Numarası</label>
-                                            <input type="text" className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" value={settings.phone} onChange={e => setSettings({...settings, phone: e.target.value})} />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-stitch-text-muted uppercase mb-1">WhatsApp Numarası</label>
-                                            <input type="text" className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" value={settings.whatsapp} onChange={e => setSettings({...settings, whatsapp: e.target.value})} />
-                                        </div>
-                                        <div className="sm:col-span-2 text-right">
-                                            <button type="submit" className="bg-stitch-gold hover:bg-stitch-gold-hover text-black text-xs font-bold py-2 px-4 rounded-lg uppercase transition-all">Kaydet</button>
-                                        </div>
+                                        <input type="text" className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" value={settings.phone} onChange={e => setSettings({...settings, phone: e.target.value})} />
+                                        <input type="text" className="w-full bg-stitch-dark border border-neutral-800 text-white text-sm rounded-lg px-3 py-2 stitch-border-focus" value={settings.whatsapp} onChange={e => setSettings({...settings, whatsapp: e.target.value})} />
+                                        <button type="submit" className="sm:col-span-2 bg-stitch-gold text-black text-xs font-bold py-2 px-4 rounded-lg uppercase mobile-touch-active">KAYDET</button>
                                     </form>
                                 </div>
 
-                                <div className="bg-stitch-card stitch-border p-6 rounded-xl">
-                                    <h3 className="text-sm font-bold font-montserrat text-stitch-gold uppercase border-b border-neutral-800 pb-3 mb-4">Mevcut Araçlar (İlk 2 Araç Sergilenir)</h3>
-                                    {vehicles.length === 0 ? (
-                                        <p className="text-xs text-stitch-text-muted text-center py-4">Koleksiyonda araç bulunamadı.</p>
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {vehicles.map(v => (
-                                                <div key={v.id} className="flex items-center gap-4 bg-stitch-dark p-3 rounded-lg border border-neutral-900">
-                                                    <img src={v.image} className="w-16 h-12 object-cover rounded bg-neutral-800" />
-                                                    <div className="flex-1 min-w-0">
-                                                        <h4 className="text-sm font-bold text-white truncate">{v.name}</h4>
-                                                        <p className="text-xs text-stitch-text-muted truncate">{v.description.replace(/\n/g, ', ')}</p>
-                                                    </div>
-                                                    <div className="flex gap-1">
-                                                        <button onClick={() => { setEditingVehicle(v); setVehName(v.name); setVehImg(v.image); setVehDesc(v.description); }} className="p-2 text-stitch-gold hover:bg-neutral-800 rounded-lg transition-all"><i className="fa-solid fa-pen-to-square"></i></button>
-                                                        <button onClick={() => deleteVehicle(v.id)} className="p-2 text-red-500 hover:bg-neutral-800 rounded-lg transition-all"><i className="fa-solid fa-trash"></i></button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
+                                <div className="bg-stitch-card stitch-border p-5 rounded-xl">
+                                    <h3 className="text-xs font-bold font-montserrat text-stitch-gold uppercase border-b border-neutral-800 pb-2 mb-4">Mevcut Araçlar</h3>
+                                    <div className="space-y-2">
+                                        {vehicles.map(v => (
+                                            <div key={v.id} className="flex items-center gap-3 bg-stitch-dark p-2 rounded-lg">
+                                                <img src={v.image} className="w-12 h-9 object-cover rounded bg-neutral-800" />
+                                                <div className="flex-1 min-w-0"><h4 className="text-xs font-bold text-white truncate">{v.name}</h4></div>
+                                                <button onClick={() => { setEditingVehicle(v); setVehName(v.name); setVehImg(v.image); setVehDesc(v.description); }} className="p-2 text-stitch-gold"><i className="fa-solid fa-pen"></i></button>
+                                                <button onClick={() => deleteVehicle(v.id)} className="p-2 text-red-500"><i className="fa-solid fa-trash"></i></button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -319,88 +300,91 @@
                 );
             }
 
+            // --- ANA SAYFA MÜŞTERİ VİTRİNİ ---
             return (
-                <div className="min-h-screen flex flex-col selection:bg-stitch-gold selection:text-black">
+                <div className="min-h-screen flex flex-col pb-24 md:pb-0">
                     
                     {/* HERO BÖLÜMÜ */}
-                    <section className="relative min-h-[85vh] flex flex-col justify-center items-center px-4 py-20 text-center border-b border-neutral-900">
-                        <div className="absolute inset-0 z-0 opacity-25">
-                            <img src="https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=1600" className="w-full h-full object-cover" alt="VIP Transfer Hero" />
+                    <section className="relative min-h-[75vh] flex flex-col justify-center items-center px-4 py-16 text-center border-b border-neutral-900 overflow-hidden">
+                        <div className="absolute inset-0 z-0 opacity-20">
+                            <img src="https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=800" className="w-full h-full object-cover" alt="VIP" />
                             <div className="absolute inset-0 bg-gradient-to-t from-stitch-dark via-transparent to-stitch-dark"></div>
                         </div>
 
-                        <div className="relative z-10 max-w-3xl mx-auto space-y-6">
-                            <h1 className="text-4xl md:text-6xl font-black font-montserrat tracking-tight uppercase">VIP TRANSFER</h1>
-                            <div className="w-20 h-1 bg-stitch-gold mx-auto rounded-full"></div>
-                            <p className="text-stitch-text-muted font-light text-base md:text-lg max-w-xl mx-auto tracking-wide leading-relaxed">
-                                Konforlu Güvenli Yolculuk. VIP transfer ve araç kiralama hizmetlerinde müşteri memnuniyeti odaklı, kaliteli ve güvenilir çözümler sunuyoruz.
+                        <div className="relative z-10 max-w-2xl mx-auto space-y-4">
+                            <span className="text-[10px] bg-stitch-gold/10 text-stitch-gold border border-stitch-gold/20 px-3 py-1 rounded-full font-bold uppercase tracking-widest">7/24 Premium Hizmet</span>
+                            <h1 className="text-4xl md:text-6xl font-black font-montserrat tracking-tight uppercase leading-none">VIP TRANSFER</h1>
+                            <div className="w-12 h-0.5 bg-stitch-gold mx-auto rounded-full"></div>
+                            <p className="text-stitch-text-muted font-light text-xs md:text-sm max-w-md mx-auto leading-relaxed px-2">
+                                Konforlu ve güvenli yolculuk. Müşteri memnuniyeti odaklı, lüks ve kaliteli transfer çözümleri sunuyoruz.
                             </p>
                             
-                            <div className="pt-6 flex flex-col sm:flex-row justify-center items-center gap-4 max-w-md mx-auto">
-                                <a href={`tel:${settings.phone}`} className="w-full sm:flex-1 bg-stitch-gold hover:bg-stitch-gold-hover text-black font-bold text-xs uppercase tracking-widest py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2 shadow-xl">
-                                    <i className="fa-solid fa-phone"></i> Telefon İle Ara
+                            {/* Ana Gövde Hızlı Aksiyon Butonları (Dokunma Tepkisi Hızlandırılmış) */}
+                            <div className="pt-4 flex flex-col sm:flex-row justify-center items-center gap-3 max-w-sm mx-auto w-full px-2">
+                                <a href={`tel:${cleanPhone}`} className="w-full bg-stitch-gold text-black font-bold text-xs uppercase tracking-wider py-3.5 px-4 rounded-xl transition-transform active:scale-95 flex items-center justify-center gap-2 mobile-touch-active shadow-lg">
+                                    <i className="fa-solid fa-phone text-sm"></i> Hemen Ara
                                 </a>
-                                <a href={`https://wa.me/${settings.whatsapp.replace(/\s+/g, '')}`} target="_blank" className="w-full sm:flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-widest py-4 px-6 rounded-lg transition-all flex items-center justify-center gap-2 shadow-xl">
-                                    <i className="fa-brands fa-whatsapp text-lg"></i> WhatsApp İletişim
+                                <a href={`whatsapp://send?phone=${cleanWhatsapp}`} className="w-full bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider py-3.5 px-4 rounded-xl transition-transform active:scale-95 flex items-center justify-center gap-2 mobile-touch-active shadow-lg">
+                                    <i className="fa-brands fa-whatsapp text-base"></i> Doğrudan WhatsApp
                                 </a>
                             </div>
                         </div>
                     </section>
 
                     {/* HİZMETLERİMİZ BÖLÜMÜ */}
-                    <section className="py-20 max-w-6xl w-full mx-auto px-4">
-                        <div className="text-center mb-12">
-                            <h2 className="text-2xl font-black font-montserrat tracking-wider uppercase text-white">HİZMETLERİMİZ</h2>
-                            <div className="w-12 h-0.5 bg-stitch-gold mx-auto mt-2"></div>
+                    <section className="py-12 max-w-6xl w-full mx-auto px-4">
+                        <div className="text-center mb-8">
+           <h2 className="text-lg font-bold font-montserrat tracking-wider uppercase text-white">HİZMETLERİMİZ</h2>
+                            <div className="w-8 h-0.5 bg-stitch-gold mx-auto mt-1.5"></div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div className="bg-stitch-card stitch-border rounded-xl p-6 text-center space-y-3 hover:translate-y-[-4px] transition-all">
-                                <i className="fa-solid fa-plane-departure text-3xl text-stitch-gold"></i>
-                                <h3 className="font-bold text-sm font-montserrat uppercase tracking-wide">Havalimanı Transferi</h3>
-                                <p className="text-xs text-stitch-text-muted font-light leading-relaxed">Zamanında ve konforlu havalimanı transfer hizmetleri.</p>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div className="bg-stitch-card stitch-border rounded-xl p-4 text-center space-y-2">
+                                <i className="fa-solid fa-plane-departure text-xl text-stitch-gold"></i>
+                                <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">Havalimanı</h3>
+                                <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Zamanında ve konforlu karşılama.</p>
                             </div>
-                            <div className="bg-stitch-card stitch-border rounded-xl p-6 text-center space-y-3 hover:translate-y-[-4px] transition-all">
-                                <i className="fa-solid fa-road text-3xl text-stitch-gold"></i>
-                                <h3 className="font-bold text-sm font-montserrat uppercase tracking-wide">Şehirler Arası Transfer</h3>
-                                <p className="text-xs text-stitch-text-muted font-light leading-relaxed">Türkiye'nin her noktasına güvenli ve konforlu ulaşım.</p>
+                            <div className="bg-stitch-card stitch-border rounded-xl p-4 text-center space-y-2">
+                                <i className="fa-solid fa-road text-xl text-stitch-gold"></i>
+                                <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">Şehirler Arası</h3>
+                                <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Her noktaya güvenli uzun yol.</p>
                             </div>
-                            <div className="bg-stitch-card stitch-border rounded-xl p-6 text-center space-y-3 hover:translate-y-[-4px] transition-all">
-                                <i className="fa-solid fa-crown text-3xl text-stitch-gold"></i>
-                                <h3 className="font-bold text-sm font-montserrat uppercase tracking-wide">VIP Transfer</h3>
-                                <p className="text-xs text-stitch-text-muted font-light leading-relaxed">Kişiye özel, lüks donanımlı araçlarla üst düzey seyahat keyfi.</p>
+                            <div className="bg-stitch-card stitch-border rounded-xl p-4 text-center space-y-2">
+                                <i className="fa-solid fa-crown text-xl text-stitch-gold"></i>
+                                <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">VIP Transfer</h3>
+                                <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Kişiye özel ultra lüks dizayn.</p>
                             </div>
-                            <div className="bg-stitch-card stitch-border rounded-xl p-6 text-center space-y-3 hover:translate-y-[-4px] transition-all">
-                                <i className="fa-solid fa-user-tie text-3xl text-stitch-gold"></i>
-                                <h3 className="font-bold text-sm font-montserrat uppercase tracking-wide">Şoförlü Araç Kiralama</h3>
-                                <p className="text-xs text-stitch-text-muted font-light leading-relaxed">Profesyonel şoförlerimiz ile konforlu ve güvenli seyahat.</p>
+                            <div className="bg-stitch-card stitch-border rounded-xl p-4 text-center space-y-2">
+                                <i className="fa-solid fa-user-tie text-xl text-stitch-gold"></i>
+                                <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">Şoförlü Tahsis</h3>
+                                <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Profesyonel şoför kadrosu.</p>
                             </div>
                         </div>
                     </section>
 
                     {/* ARAÇLARIMIZ BÖLÜMÜ */}
-                    <section className="py-20 bg-stitch-card border-y border-neutral-900 px-4">
-                        <div className="max-w-5xl w-full mx-auto">
-                            <div className="text-center mb-12">
-                                <h2 className="text-2xl font-black font-montserrat tracking-wider uppercase text-white">ARAÇLARIMIZ</h2>
-                                <div className="w-12 h-0.5 bg-stitch-gold mx-auto mt-2"></div>
+                    <section className="py-12 bg-stitch-card border-y border-neutral-900 px-4">
+                        <div className="max-w-4xl w-full mx-auto">
+                            <div className="text-center mb-8">
+                                <h2 className="text-lg font-bold font-montserrat tracking-wider uppercase text-white">ARAÇLARIMIZ</h2>
+                                <div className="w-8 h-0.5 bg-stitch-gold mx-auto mt-1.5"></div>
                             </div>
 
                             {vehicles.length === 0 ? (
-                                <p className="text-xs text-stitch-text-muted text-center py-6">Araçlar Firestore'dan yükleniyor veya henüz araç eklenmemiş.</p>
+                                <p className="text-xs text-stitch-text-muted text-center py-4">Lüks araç filomuz yükleniyor...</p>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {vehicles.slice(0, 2).map(v => (
-                                        <div key={v.id} className="bg-stitch-dark stitch-border rounded-xl p-4 flex flex-col md:flex-row gap-4 items-center">
-                                            <div className="w-full md:w-1/2 aspect-[4/3] bg-neutral-900 rounded-lg overflow-hidden flex-shrink-0">
-                                                <img src={v.image} className="w-full h-full object-cover" alt={v.name} onError={(e)=>{e.target.src='https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=600'}} />
+                                        <div key={v.id} className="bg-stitch-dark stitch-border rounded-xl p-3 flex flex-col sm:flex-row gap-4 items-center">
+                                            <div className="w-full sm:w-2/5 aspect-[4/3] bg-neutral-900 rounded-lg overflow-hidden flex-shrink-0">
+                                                <img src={v.image} className="w-full h-full object-cover" alt={v.name} onError={(e)=>{e.target.src='https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=500'}} />
                                             </div>
-                                            <div className="w-full md:w-1/2 space-y-2">
-                                                <h3 className="font-bold font-montserrat text-sm text-stitch-gold uppercase tracking-wide">{v.name}</h3>
-                                                <ul className="text-xs text-stitch-text-muted space-y-1 font-light">
+                                            <div className="w-full sm:w-3/5 space-y-1.5 self-start sm:self-center">
+                                                <h3 className="font-bold font-montserrat text-xs text-stitch-gold uppercase tracking-wide">{v.name}</h3>
+                                                <ul className="text-[11px] text-stitch-text-muted space-y-1 font-light">
                                                     {v.description.split('\n').map((line, idx) => (
-                                                        <li key={idx} className="flex items-center gap-2">
-                                                            <i className="fa-regular fa-circle-check text-stitch-gold text-[10px]"></i> {line}
+                                                        <li key={idx} className="flex items-center gap-1.5 truncate">
+                                                            <i className="fa-regular fa-circle-check text-stitch-gold text-[9px]"></i> {line}
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -412,34 +396,22 @@
                         </div>
                     </section>
 
-                    {/* İLETİŞİM VE FOOTER BÖLÜMÜ */}
-                    <footer className="py-16 mt-auto px-4 max-w-4xl w-full mx-auto text-center space-y-8">
-                        <div className="text-center">
-                            <h2 className="text-xl font-black font-montserrat tracking-wider uppercase text-white">İLETİŞİM</h2>
-                            <div className="w-10 h-0.5 bg-stitch-gold mx-auto mt-2"></div>
-                        </div>
-
-                        <div className="flex flex-col sm:flex-row justify-center items-center gap-6 max-w-md mx-auto">
-                            <a href={`tel:${settings.phone}`} className="w-full flex items-center justify-center gap-3 bg-stitch-card border border-neutral-800 hover:border-stitch-gold p-4 rounded-xl transition-all">
-                                <i className="fa-solid fa-phone text-stitch-gold text-lg"></i>
-                                <div className="text-left">
-                                    <span className="block text-[9px] text-stitch-text-muted font-bold uppercase tracking-wider">Telefon</span>
-                                    <span className="block text-sm font-bold text-white tracking-wide">{settings.phone}</span>
-                                </div>
-                            </a>
-                            <a href={`https://wa.me/${settings.whatsapp.replace(/\s+/g, '')}`} target="_blank" className="w-full flex items-center justify-center gap-3 bg-stitch-card border border-neutral-800 hover:border-stitch-gold p-4 rounded-xl transition-all">
-                                <i className="fa-brands fa-whatsapp text-emerald-500 text-xl"></i>
-                                <div className="text-left">
-                                    <span className="block text-[9px] text-stitch-text-muted font-bold uppercase tracking-wider">WhatsApp</span>
-                                    <span className="block text-sm font-bold text-white tracking-wide">{settings.whatsapp}</span>
-                                </div>
-                            </a>
-                        </div>
-
-                        <div className="pt-8 border-t border-neutral-900 text-[10px] font-bold text-neutral-600 uppercase tracking-widest">
+                    {/* İLETİŞİM ALTI */}
+                    <footer className="py-12 px-4 max-w-xl w-full mx-auto text-center space-y-4">
+                        <p className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">
                             © 2026 VIP TRANSFER. TÜM HAKLARI SAKLIDIR.
-                        </div>
+                        </p>
                     </footer>
+
+                    {/* MOBİL ERGONOMİK SABİT ALT BAR (STIKY BOTTOM BUTTONS) */}
+                    <div className="fixed bottom-0 left-0 right-0 z-50 bg-stitch-card/90 backdrop-blur-md border-t border-neutral-800/80 p-3 flex gap-3 md:hidden shadow-[0_-8px_24px_rgba(0,0,0,0.5)]">
+                        <a href={`tel:${cleanPhone}`} className="flex-1 bg-neutral-900 border border-neutral-800 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 mobile-touch-active shadow-md">
+                            <i className="fa-solid fa-phone text-stitch-gold text-sm animate-pulse"></i> Arama Yap
+                        </a>
+                        <a href={`whatsapp://send?phone=${cleanWhatsapp}`} className="flex-1 bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 mobile-touch-active shadow-md">
+                            <i className="fa-brands fa-whatsapp text-base"></i> WhatsApp'tan Yaz
+                        </a>
+                    </div>
 
                 </div>
             );
