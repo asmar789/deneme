@@ -62,7 +62,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
     import { getFirestore, doc, setDoc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
     const firebaseConfig = {
         apiKey: "AIzaSyC8JHwiUcHlJpoiFewsaCzSBRS8SFU-A48",
         authDomain: "viptransfer-65c5e.firebaseapp.com",
@@ -76,8 +75,6 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-
-
     window.FirebaseBridge = { auth, db, signInWithEmailAndPassword, signOut, onAuthStateChanged, doc, setDoc, collection, onSnapshot, addDoc, updateDoc, deleteDoc };
 </script>
 
@@ -183,22 +180,17 @@
             setView('home');
         };
 
-        // Araç kaydet — Storage'a yükle
+        // Araç kaydet — Base64 ile kaydet
         const saveVehicle = async (e) => {
             e.preventDefault();
-            if (!vehFile && !editingVehicle?.image && !vehImg.startsWith('http')) {
+            if (!vehFile && !editingVehicle?.image && !vehImg) {
                 alert('Lütfen araç için bir fotoğraf yükleyin!');
                 return;
             }
             setUploading(true);
             try {
                 const { db, collection, addDoc, doc, updateDoc } = window.FirebaseBridge;
-                let imageUrl = editingVehicle?.image || '';
-
-                if (vehFile) {
-                    const filename = 'vehicles/' + Date.now() + '_' + vehFile.name.replace(/\s/g, '_');
-                    imageUrl = await window.uploadToStorage(vehFile, filename);
-                }
+                let imageUrl = vehImg || editingVehicle?.image || '';
 
                 const data = { name: vehName, image: imageUrl, description: vehDesc };
                 if (editingVehicle) {
