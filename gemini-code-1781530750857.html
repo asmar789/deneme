@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="tr" class="light">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>ELITE VIP | Premium VIP Transfer</title>
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&family=Inter:wght@400;600&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#735c00",
+                        "primary-gold": "#d4af37",
+                        "dark-surface": "#1a1c1c",
+                        "card-bg": "#f9f9f9",
+                        "outline-gold": "#7f7663"
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        montserrat: ['Montserrat', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body class="bg-white text-gray-900 font-sans antialiased">
+
+    <div id="root"></div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // BURAYA KENDİ FİREBASE BİLGİLERİNİ YAPIŞTIRACAKSIN
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Global export to bridge with React component
+        window.FirebaseBridge = { auth, db, signInWithEmailAndPassword, signOut, onAuthStateChanged, doc, getDoc, setDoc, collection, onSnapshot, addDoc, updateDoc, deleteDoc };
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [view, setView] = useState('home'); // home, admin-login, admin-panel
+            const [user, setUser] = useState(null);
+            const [vehicles, setVehicles] = useState([]);
+            const [settings, setSettings] = useState({ phone: '+905000000000', whatsapp: '+905000000000' });
+            const [loading, setLoading] = useState(true);
+
+            // Admin Login Credentials
+            const [loginEmail, setLoginEmail] = useState('');
+            const [loginPassword, setLoginPassword] = useState('');
+            const [loginError, setLoginError] = useState('');
+
+            // Admin CRUD States
+            const [editingVehicle, setEditingVehicle] = useState(null);
+            const [vehName, setVehName] = useState('');
+            const [vehImg, setVehImg] = useState('');
+            const [vehDesc, setVehDesc] = useState('');
+
+            // Listening to simple hash routing for /admin pathing
+            useEffect(() => {
+                const handleHashChange = () => {
+                    if (window.location.hash === '#/admin') {
+                        if (user) setView('admin-panel');
+                        else setView('admin-login');
+                    } else {
+                        setView('home');
+                    }
+                };
+                window.addEventListener('hashchange', handleHashChange);
+                handleHashChange();
+                return () => window.removeEventListener('hashchange', handleHashChange);
+            }, [user]);
+
+            // Sync with Firebase Bridge
+            useEffect(() => {
+                const checkBridge = setInterval(() => {
+                    if (window.FirebaseBridge) {
+                        clearInterval(checkBridge);
+                        const { auth, db, onAuthStateChanged, collection, onSnapshot, doc } = window.FirebaseBridge;
+
+                        // Auth state
+                        onAuthStateChanged(auth, (currentUser) => {
+                            if (currentUser && (currentUser.email.endsWith('@admin.com') || currentUser.email.includes('@admin'))) {
+                                setUser(currentUser);
+                                if (window.location.hash === '#/admin') setView('admin-panel');
+                            } else {
+                                setUser(null);
+                                if (window.location.hash === '#/admin') setView('admin-login');
+                            }
+                        });
+
+                        // Vehicles listener
+                        onSnapshot(collection(db, "vehicles"), (snapshot) => {
+                            const vehList = [];
+                            snapshot.forEach(doc => vehList.push({ id: doc.id, ...doc.data() }));
+                            setVehicles(vehList);
+                        });
+
+                        // Settings listener
+                        onSnapshot(doc(db, "settings", "contact"), (docSnap) => {
+                            if (docSnap.exists()) {
+                                setSettings(docSnap.data());
+                            }
+                        });
+
+                        setLoading(false);
+                    }
+                }, 100);
+            }, []);
+
+            const handleLogin = async (e) => {
+                e.preventDefault();
+                setLoginError('');
+                if (!loginEmail.endsWith('@admin.com') && !loginEmail.includes('@admin')) {
+                    setLoginError('Lütfen yetkili bir @admin uzantılı hesap kullanın.');
+                    return;
+                }
+                try {
+                    const { auth, signInWithEmailAndPassword } = window.FirebaseBridge;
+                    await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+                } catch (err) {
+                    setLoginError('Giriş başarısız. Bilgilerinizi kontrol edin.');
+                }
+            };
+
+            const handleLogout = async () => {
+                const { auth, signOut } = window.FirebaseBridge;
+                await signOut(auth);
+                window.location.hash = '';
+                setView('home');
+            };
+
+            // CRUD Operations
+            const saveVehicle = async (e) => {
+                e.preventDefault();
+                const { db, collection, addDoc, doc, updateDoc } = window.FirebaseBridge;
+                const data = { name: vehName, image: vehImg, description: vehDesc };
+
+                if (editingVehicle) {
+                    await updateDoc(doc(db, "vehicles", editingVehicle.id), data);
+                    setEditingVehicle(null);
+                } else {
+                    await addDoc(collection(db, "vehicles"), data);
+                }
+                setVehName(''); setVehImg(''); setVehDesc('');
+            };
+
+            const deleteVehicle = async (id) => {
+                if (confirm('Bu aracı silmek istediğinize emin misiniz?')) {
+                    const { db, doc, deleteDoc } = window.FirebaseBridge;
+                    await deleteDoc(doc(db, "vehicles", id));
+                }
+            };
+
+            const updateContactSettings = async (e) => {
+                e.preventDefault();
+                const { db, doc, setDoc } = window.FirebaseBridge;
+                await setDoc(doc(db, "settings", "contact"), settings);
+                alert('İletişim numaraları başarıyla güncellendi!');
+            };
+
+            if (loading) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center bg-dark-surface text-white">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-gold mx-auto mb-4"></div>
+                            <p className="font-montserrat tracking-wider">ELITE VIP YÜKLENİYOR...</p>
+                        </div>
+                    </div>
+                );
+            }
+
+            // --- ADMIN LOGIN VIEW ---
+            if (view === 'admin-login') {
+                return (
+                    <div className="min-h-screen bg-dark-surface flex items-center justify-center px-4">
+                        <div className="max-w-md w-full bg-neutral-900 border border-neutral-800 rounded-3xl p-8 shadow-2xl">
+                            <div className="text-center mb-8">
+                                <h2 className="text-3xl font-extrabold font-montserrat text-white tracking-tight">ELITE VIP</h2>
+                                <p className="text-primary-gold text-xs font-semibold uppercase tracking-widest mt-1">Yönetim Girişi</p>
+                            </div>
+                            {loginError && <div className="bg-red-900/50 border border-red-500 text-red-200 p-3 rounded-xl text-sm mb-4 text-center">{loginError}</div>}
+                            <form onSubmit={handleLogin} className="space-y-5">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">E-Posta (@admin)</label>
+                                    <input type="email" required className="w-full bg-neutral-800 border-0 focus:ring-2 focus:ring-primary-gold text-white rounded-xl px-4 py-3" placeholder="isim@admin" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Şifre</label>
+                                    <input type="password" required className="w-full bg-neutral-800 border-0 focus:ring-2 focus:ring-primary-gold text-white rounded-xl px-4 py-3" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} />
+                                </div>
+                                <button type="submit" className="w-full bg-primary-gold hover:bg-yellow-600 text-black font-bold py-3 px-4 rounded-xl transition-all duration-300 font-montserrat tracking-wide">GİRİŞ YAP</button>
+                            </form>
+                            <div className="text-center mt-6">
+                                <button onClick={() => { window.location.hash = ''; setView('home'); }} className="text-sm text-gray-400 hover:text-white underline">Ana Sayfaya Dön</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // --- ADMIN PANEL VIEW ---
+            if (view === 'admin-panel') {
+                return (
+                    <div className="min-h-screen bg-gray-50 flex flex-col">
+                        <header className="bg-dark-surface text-white py-4 px-6 shadow-md flex justify-between items-center">
+                            <div>
+                                <h1 className="text-xl font-bold font-montserrat tracking-wide text-primary-gold">ELITE VIP PANEL</h1>
+                                <p className="text-xs text-gray-400">Hoş geldiniz, {user?.email}</p>
+                            </div>
+                            <button onClick={handleLogout} className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all">
+                                <span className="material-symbols-outlined text-sm">logout</span> ÇIKIŞ YAP
+                            </button>
+                        </header>
+
+                        <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {/* Left Side: Vehicle Management Form */}
+                            <div className="md:col-span-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 h-fit">
+                                <h3 className="text-lg font-bold font-montserrat mb-4 text-dark-surface border-b pb-2">
+                                    {editingVehicle ? 'Aracı Düzenle' : 'Yeni Araç Ekle'}
+                                </h3>
+                                <form onSubmit={saveVehicle} className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Araç Adı</label>
+                                        <input type="text" required className="w-full rounded-xl border-gray-300 text-sm focus:ring-primary focus:border-primary" placeholder="Örn: Mercedes-Benz Vito Premium" value={vehName} onChange={e => setVehName(e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Görsel URL</label>
+                                        <input type="url" required className="w-full rounded-xl border-gray-300 text-sm focus:ring-primary focus:border-primary" placeholder="https://image-link-url.com/vito.png" value={vehImg} onChange={e => setVehImg(e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Kısa Açıklama / Özellikler</label>
+                                        <textarea required rows="3" className="w-full rounded-xl border-gray-300 text-sm focus:ring-primary focus:border-primary" placeholder="Ultra lüks dizayn, Deri koltuk, TV..." value={vehDesc} onChange={e => setVehDesc(e.target.value)}></textarea>
+                                    </div>
+                                    <div className="flex gap-2 pt-2">
+                                        <button type="submit" className="flex-1 bg-primary text-white text-xs font-bold py-3 rounded-xl uppercase tracking-wider hover:bg-black transition-all">
+                                            {editingVehicle ? 'Güncelle' : 'Kaydet'}
+                                        </button>
+                                        {editingVehicle && (
+                                            <button type="button" onClick={() => { setEditingVehicle(null); setVehName(''); setVehImg(''); setVehDesc(''); }} className="bg-gray-200 text-gray-700 text-xs font-bold px-4 rounded-xl hover:bg-gray-300">İptal</button>
+                                        )}
+                                    </div>
+                                </form>
+                            </div>
+
+                            {/* Center and Right Side: Vehicles List & Settings */}
+                            <div className="md:col-span-2 space-y-8">
+                                {/* Contact Settings Update */}
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                                    <h3 className="text-lg font-bold font-montserrat mb-4 text-dark-surface border-b pb-2">İletişim Numaralarını Güncelle</h3>
+                                    <form onSubmit={updateContactSettings} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Telefon Numarası</label>
+                                            <input type="text" className="w-full rounded-xl border-gray-300 text-sm focus:ring-primary focus:border-primary" value={settings.phone} onChange={e => setSettings({...settings, phone: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">WhatsApp Numarası</label>
+                                            <input type="text" className="w-full rounded-xl border-gray-300 text-sm focus:ring-primary focus:border-primary" value={settings.whatsapp} onChange={e => setSettings({...settings, whatsapp: e.target.value})} />
+                                        </div>
+                                        <div className="sm:col-span-2 text-right">
+                                            <button type="submit" className="bg-dark-surface hover:bg-primary-gold hover:text-black text-white text-xs font-bold py-2.5 px-6 rounded-xl uppercase transition-all">Numaraları Kaydet</button>
+                                        </div>
+                                    </form>
+                                </div>
+
+                                {/* Active Vehicles (Limit 2 Showcase alert in frontend) */}
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                                    <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                        <h3 className="text-lg font-bold font-montserrat text-dark-surface">Mevcut Araçlar</h3>
+                                        <span className="text-xs font-semibold bg-gray-100 text-gray-600 px-3 py-1 rounded-full">Sitede ilk 2 araç listelenir</span>
+                                    </div>
+                                    {vehicles.length === 0 ? (
+                                        <p className="text-sm text-gray-400 text-center py-6">Henüz araç eklenmemiş.</p>
+                                    ) : (
+                                        <div className="divide-y divide-gray-100">
+                                            {vehicles.map(vehicle => (
+                                                <div key={vehicle.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
+                                                    <img src={vehicle.image} alt={vehicle.name} className="w-20 h-14 object-cover rounded-lg bg-gray-100 flex-shrink-0" onError={(e)=>{e.target.src='https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=600'}} />
+                                                    <div className="flex-1 min-w-0">
+                                                        <h4 className="font-bold text-sm text-gray-900 truncate">{vehicle.name}</h4>
+                                                        <p className="text-xs text-gray-500 truncate mt-0.5">{vehicle.description}</p>
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => { setEditingVehicle(vehicle); setVehName(vehicle.name); setVehImg(vehicle.image); setVehDesc(vehicle.description); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Düzenle">
+                                                            <span className="material-symbols-outlined text-[20px]">edit</span>
+                                                        </button>
+                                                        <button onClick={() => deleteVehicle(vehicle.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Sil">
+                                                            <span className="material-symbols-outlined text-[20px]">delete</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </main>
+                    </div>
+                );
+            }
+
+            // --- MAIN MARKETING WEBSITE VIEW ---
+            return (
+                <div className="flex flex-col min-h-screen selection:bg-primary-gold selection:text-black">
+                    
+                    {/* Header/Navbar */}
+                    <header className="absolute top-0 left-0 w-full z-50 bg-transparent py-6 px-6 md:px-12 flex justify-between items-center">
+                        <div className="text-white">
+                            <span className="font-montserrat text-2xl font-extrabold tracking-tight block">ELITE <span className="text-primary-gold">VIP</span></span>
+                            <span className="text-[9px] font-bold uppercase tracking-widest block opacity-70">Premium Transfer Hub</span>
+                        </div>
+                        <div className="flex items-center gap-6">
+                            <a href="#hizmetlerimiz" className="text-xs font-semibold uppercase tracking-wider text-white hover:text-primary-gold transition-colors">Hizmetlerimiz</a>
+                            <a href="#araclarimiz" className="text-xs font-semibold uppercase tracking-wider text-white hover:text-primary-gold transition-colors">Araçlarımız</a>
+                            <a href="#iletisim" className="text-xs font-semibold uppercase tracking-wider text-white hover:text-primary-gold transition-colors">İletişim</a>
+                        </div>
+                    </header>
+
+                    {/* HERO SECTION */}
+                    <section className="relative h-screen bg-dark-surface flex items-center justify-center overflow-hidden">
+                        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-10" />
+                        
+                        {/* Background Luxury Vehicle Image */}
+                        <img 
+                            src="https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=1920" 
+                            alt="Elite VIP Transfer Business Vehicle" 
+                            className="absolute inset-0 w-full h-full object-cover object-center transform scale-105 animate-[subtle-zoom_20s_infinite_alternate]"
+                        />
+
+                        <div className="relative z-20 max-w-5xl w-full mx-auto px-6 md:px-12 text-left text-white mt-16">
+                            <span className="inline-block text-primary-gold font-montserrat text-xs font-extrabold uppercase tracking-widest mb-3 bg-primary/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-primary-gold/30">Konfor ve Prestij Bir Arada</span>
+                            <h2 className="text-4xl md:text-6xl font-black font-montserrat tracking-tight uppercase leading-tight max-w-2xl">
+                                ELITE VIP <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400">TRANSFERS</span>
+                            </h2>
+                            <p className="mt-4 text-base md:text-lg text-gray-300 max-w-md font-light leading-relaxed">
+                                Şehir içi, şehirler arası ve havalimanı yolculuklarınızda lüks donanımlı araçlarımızla birinci sınıf, güvenli ve konforlu transfer deneyimi sunuyoruz.
+                            </p>
+                            
+                            {/* Explicit Twin Communication Actions */}
+                            <div className="mt-8 flex flex-col sm:flex-row gap-4 max-w-md">
+                                <a href={`tel:${settings.phone}`} className="flex-1 bg-gradient-to-r from-primary to-primary-gold hover:from-white hover:to-white hover:text-black text-white text-xs font-bold py-4 px-6 rounded-xl uppercase tracking-wider text-center shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
+                                    <span className="material-symbols-outlined text-[18px]">call</span> Telefon İle Ara
+                                </a>
+                                <a href={`https://wa.me/${settings.whatsapp.replace(/\+/g, '')}`} target="_blank" className="flex-1 bg-transparent hover:bg-white/10 text-white border border-primary-gold text-xs font-bold py-4 px-6 rounded-xl uppercase tracking-wider text-center transition-all duration-300 flex items-center justify-center gap-2">
+                                    <span className="material-symbols-outlined text-[18px]">chat</span> WhatsApp İletişim
+                                </a>
+                            </div>
+                        </div>
+
+                        {/* Elegant Bottom Section Divider Accent */}
+                        <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-white to-transparent z-20" />
+                    </section>
+
+                    {/* SERVICES SECTION */}
+                    <section id="hizmetlerimiz" className="py-24 bg-white px-6 md:px-12">
+                        <div className="max-w-6xl w-full mx-auto">
+                            <div className="text-center mb-16">
+                                <h2 className="text-3xl font-extrabold font-montserrat tracking-tight text-dark-surface uppercase">Hizmetlerimiz</h2>
+                                <div className="w-16 h-1 bg-primary-gold mx-auto mt-3 rounded-full"></div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {/* Service 1 */}
+                                <div className="bg-card-bg rounded-2xl p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-white transition-colors">
+                                        <span className="material-symbols-outlined text-2xl">flight_takeoff</span>
+                                    </div>
+                                    <h4 className="font-bold text-lg font-montserrat text-gray-900 mb-2">Havalimanı Transferi</h4>
+                                    <p className="text-sm text-gray-500 font-light leading-relaxed">Uçuş saatlerinize tam uyumla konforlu karşılama ve uğurlama hizmeti.</p>
+                                </div>
+                                {/* Service 2 */}
+                                <div className="bg-card-bg rounded-2xl p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-white transition-colors">
+                                        <span className="material-symbols-outlined text-2xl">distance</span>
+                                    </div>
+                                    <h4 className="font-bold text-lg font-montserrat text-gray-900 mb-2">Şehirler Arası Transfer</h4>
+                                    <p className="text-sm text-gray-500 font-light leading-relaxed">Şehir sınırlarını aşan seyahatlerinizde kesintisiz, lüks yolculuk keyfi.</p>
+                                </div>
+                                {/* Service 3 */}
+                                <div className="bg-card-bg rounded-2xl p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-white transition-colors">
+                                        <span className="material-symbols-outlined text-2xl">stars</span>
+                                    </div>
+                                    <h4 className="font-bold text-lg font-montserrat text-gray-900 mb-2">VIP Transfer</h4>
+                                    <p className="text-sm text-gray-500 font-light leading-relaxed">Tam gizlilik ve üst düzey konfor odaklı kişiselleştirilmiş lüks rota transferi.</p>
+                                </div>
+                                {/* Service 4 */}
+                                <div className="bg-card-bg rounded-2xl p-6 border border-gray-100 hover:shadow-xl transition-all duration-300 group">
+                                    <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-5 group-hover:bg-primary group-hover:text-white transition-colors">
+                                        <span className="material-symbols-outlined text-2xl">workspace_premium</span>
+                                    </div>
+                                    <h4 className="font-bold text-lg font-montserrat text-gray-900 mb-2">Şoförlü Araç Kiralama</h4>
+                                    <p className="text-sm text-gray-500 font-light leading-relaxed">Profesyonel, protokol deneyimli şoförlerimiz eşliğinde günlük tahsis imkanı.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* VEHICLES SECTION (Strict Twin Representation Layout pulled from DB) */}
+                    <section id="araclarimiz" className="py-24 bg-card-bg px-6 md:px-12 border-t border-gray-100">
+                        <div className="max-w-5xl w-full mx-auto">
+                            <div className="text-center mb-16">
+                                <h2 className="text-3xl font-extrabold font-montserrat tracking-tight text-dark-surface uppercase">Araçlarımız</h2>
+                                <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-2">Premium Filomuz</p>
+                                <div className="w-16 h-1 bg-primary-gold mx-auto mt-2 rounded-full"></div>
+                            </div>
+
+                            {vehicles.length === 0 ? (
+                                <div className="text-center py-12 bg-white rounded-2xl border border-gray-200/60 shadow-sm">
+                                    <p className="text-sm text-gray-400">Yönetici tarafından henüz sergilenecek araç eklenmedi.</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    {/* Presenting exactly the first 2 operational vehicles dynamically */}
+                                    {vehicles.slice(0, 2).map((vehicle) => (
+                                        <div key={vehicle.id} className="bg-white rounded-3xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-2xl transition-all duration-500 flex flex-col justify-between">
+                                            <div className="relative aspect-[16/10] bg-gray-100 overflow-hidden">
+                                                <img 
+                                                    src={vehicle.image} 
+                                                    alt={vehicle.name} 
+                                                    className="w-full h-full object-cover object-center hover:scale-105 transition-transform duration-700"
+                                                    onError={(e)=>{e.target.src='https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=600'}}
+                                                />
+                                            </div>
+                                            <div className="p-6 md:p-8">
+                                                <h3 className="font-montserrat font-bold text-xl text-dark-surface mb-2">{vehicle.name}</h3>
+                                                <p className="text-sm text-gray-500 font-light leading-relaxed mb-6">{vehicle.description}</p>
+                                                
+                                                {/* Core Specs Row Inline Stitch Layout */}
+                                                <div className="grid grid-cols-3 gap-2 border-t pt-4 text-center text-xs text-gray-400 font-semibold uppercase">
+                                                    <div><span className="material-symbols-outlined text-primary-gold block text-lg mb-1">ac_unit</span> Klima</div>
+                                                    <div><span className="material-symbols-outlined text-primary-gold block text-lg mb-1">tv</span> Medya/TV</div>
+                                                    <div><span className="material-symbols-outlined text-primary-gold block text-lg mb-1">chair</span> Deri</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </section>
+
+                    {/* CONTACT FOOTER */}
+                    <footer id="letisim" className="bg-dark-surface text-white pt-20 pb-10 px-6 md:px-12 border-t border-neutral-900">
+                        <div className="max-w-4xl w-full mx-auto text-center">
+                            <h2 className="text-2xl font-bold font-montserrat tracking-tight uppercase text-white mb-2">Hızlı İletişim Hatlarımız</h2>
+                            <p className="text-sm text-gray-400 max-w-sm mx-auto font-light mb-8">7/24 transfer talepleriniz için bizimle doğrudan iletişime geçebilirsiniz.</p>
+                            
+                            <div className="flex flex-col sm:flex-row justify-center items-center gap-6 max-w-xl mx-auto border-b border-neutral-800 pb-12">
+                                <a href={`tel:${settings.phone}`} className="w-full sm:w-auto flex items-center justify-center gap-3 bg-neutral-900 border border-neutral-800 hover:border-primary-gold px-6 py-4 rounded-xl transition-all">
+                                    <span className="material-symbols-outlined text-primary-gold">call</span>
+                                    <div className="text-left">
+                                        <span className="block text-[10px] text-gray-500 font-bold uppercase tracking-wider">Telefon</span>
+                                        <span className="block text-sm text-white font-bold">{settings.phone}</span>
+                                    </div>
+                                </a>
+                                <a href={`https://wa.me/${settings.whatsapp.replace(/\+/g, '')}`} target="_blank" className="w-full sm:w-auto flex items-center justify-center gap-3 bg-neutral-900 border border-neutral-800 hover:border-primary-gold px-6 py-4 rounded-xl transition-all">
+                                    <span className="material-symbols-outlined text-green-500">chat</span>
+                                    <div className="text-left">
+                                        <span className="block text-[10px] text-gray-500 font-bold uppercase tracking-wider">WhatsApp</span>
+                                        <span className="block text-sm text-white font-bold">{settings.whatsapp}</span>
+                                    </div>
+                                </a>
+                            </div>
+
+                            <p className="text-[10px] font-bold tracking-widest text-neutral-600 uppercase mt-8">© 2026 ELITE VIP TRANSFERS. TÜM HAKLARI SAKLIDIR.</p>
+                        </div>
+                    </footer>
+
+                </div>
+            );
+        }
+
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>
