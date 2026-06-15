@@ -21,11 +21,11 @@
             theme: {
                 extend: {
                     colors: {
-                        "stitch-dark": "#0B0C10",
-                        "stitch-card": "#15171C",
-                        "stitch-gold": "#C5A880",
+                        "stitch-dark": "#12131C",
+                        "stitch-card": "#1A1C24",
+                        "stitch-gold": "#D4B78F",
                         "stitch-gold-hover": "#E5C8A0",
-                        "stitch-text-muted": "#9A9DA5"
+                        "stitch-text-muted": "#B3B6BF"
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
@@ -37,15 +37,15 @@
     </script>
     <style>
         body {
-            background-color: #0B0C10;
+            background-color: #12131C;
             color: #FFFFFF;
             -webkit-tap-highlight-color: transparent;
         }
         .stitch-border {
-            border: 1px solid rgba(197, 168, 128, 0.12);
+            border: 1px solid rgba(212, 183, 143, 0.18);
         }
         .stitch-border-focus:focus {
-            border-color: #C5A880;
+            border-color: #D4B78F;
             outline: none;
         }
         .mobile-touch-active:active {
@@ -228,12 +228,12 @@
             };
 
             const cleanPhone = getCleanNumber(settings.phone);
-            const cleanWhatsapp = getCleanNumber(settings.whatsapp).replace('+', '');
+            const cleanWhatsapp = getCleanNumber(settings.whatsapp).replace('!', '');
 
             const defaultVehicles = [
                 {
                     id: "default-1",
-                    name: "MERCEDES VITO VIP (ÖRNEK)",
+                    name: "MERCEDES VITO VIP",
                     image: "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=600",
                     description: "Ultra Lüks VIP Tasarım\n9+1 Geniş Yolcu Kapasitesi\nBuzdolabı ve TV Eğlence Sistemi\nÜcretsiz Wi-Fi ve İkramlar"
                 }
@@ -261,10 +261,10 @@
                             {loginError && <div className="bg-red-900/30 border border-red-500 text-red-200 p-3 rounded-lg text-xs text-center mb-4">{loginError}</div>}
                             <form onSubmit={handleLogin} className="space-y-4">
                                 <div>
-                                    <input type="email" required className="w-full bg-stitch-dark border border-neutral-800 text-white rounded-lg px-4 py-3 text-sm stitch-border-focus" placeholder="E-Posta" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} />
+                                    <input type="email" required className="w-full bg-stitch-dark border border-neutral-700 text-white rounded-lg px-4 py-3 text-sm stitch-border-focus" placeholder="E-Posta" value={loginEmail} onChange={e => setLoginEmail(e.target.value)} />
                                 </div>
                                 <div>
-                                    <input type="password" required className="w-full bg-stitch-dark border border-neutral-800 text-white rounded-lg px-4 py-3 text-sm stitch-border-focus" placeholder="Şifre" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} />
+                                    <input type="password" required className="w-full bg-stitch-dark border border-neutral-700 text-white rounded-lg px-4 py-3 text-sm stitch-border-focus" placeholder="Şifre" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} />
                                 </div>
                                 <button type="submit" className="w-full bg-stitch-gold text-black font-bold py-3 rounded-lg text-xs font-montserrat tracking-wider uppercase transition-all mobile-touch-active">GİRİŞ YAP</button>
                             </form>
@@ -350,25 +350,25 @@
                 <div className="min-h-screen flex flex-col pb-6">
                     
                     {/* HERO BÖLÜMÜ */}
-                    <section className="relative min-h-[75vh] flex flex-col justify-center items-center px-4 py-16 text-center border-b border-neutral-900 overflow-hidden">
-                        <div className="absolute inset-0 z-0 opacity-20">
+                    <section className="relative min-h-[75vh] flex flex-col justify-center items-center px-4 py-16 text-center border-b border-neutral-800/40 overflow-hidden">
+                        <div className="absolute inset-0 z-0 opacity-25">
                             <img src="https://images.unsplash.com/photo-1563720223185-11003d516935?q=80&w=800" className="w-full h-full object-cover" alt="VIP" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-stitch-dark via-transparent to-stitch-dark"></div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-stitch-dark via-stitch-dark/40 to-stitch-dark"></div>
                         </div>
 
-                        <div className="relative z-10 max-w-2xl mx-auto space-y-4">
-                            <span className="text-[10px] bg-stitch-gold/10 text-stitch-gold border border-stitch-gold/20 px-3 py-1 rounded-full font-bold uppercase tracking-widest">7/24 Premium Hizmet</span>
-                            <h1 className="text-4xl md:text-6xl font-black font-montserrat tracking-tight uppercase leading-none">VIP TRANSFER</h1>
+                        <div className="relative z-10 max-w-2xl mx-auto space-y-5">
+                            <span className="text-[10px] bg-stitch-gold/20 text-white border border-stitch-gold/40 px-3 py-1 rounded-full font-bold uppercase tracking-widest">7/24 Premium Hizmet</span>
+                            <h1 className="text-4xl md:text-6xl font-black font-montserrat tracking-tight uppercase leading-none text-white">VIP TRANSFER</h1>
                             <div className="w-12 h-0.5 bg-stitch-gold mx-auto rounded-full"></div>
-                            <p className="text-stitch-text-muted font-light text-xs md:text-sm max-w-md mx-auto leading-relaxed px-2">
+                            <p className="text-stitch-text-muted font-normal text-xs md:text-sm max-w-md mx-auto leading-relaxed px-2">
                                 Konforlu ve güvenli yolculuk. Müşteri memnuniyeti odaklı, lüks ve kaliteli transfer çözümleri sunuyoruz.
                             </p>
                             
                             <div className="pt-4 flex flex-col sm:flex-row justify-center items-center gap-3 max-w-sm mx-auto w-full px-2">
-                                <a href={`tel:${cleanPhone}`} className="w-full bg-stitch-gold text-black font-bold text-xs uppercase tracking-wider py-3.5 px-4 rounded-xl transition-transform active:scale-95 flex items-center justify-center gap-2 mobile-touch-active shadow-lg">
+                                <a href={`tel:${cleanPhone}`} className="w-full bg-stitch-gold hover:bg-stitch-gold-hover text-black font-bold text-xs uppercase tracking-wider py-3.5 px-4 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 mobile-touch-active shadow-lg">
                                     <i className="fa-solid fa-phone text-sm"></i> Hemen Ara
                                 </a>
-                                <a href={`whatsapp://send?phone=${cleanWhatsapp}`} className="w-full bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider py-3.5 px-4 rounded-xl transition-transform active:scale-95 flex items-center justify-center gap-2 mobile-touch-active shadow-lg">
+                                <a href={`whatsapp://send?phone=${cleanWhatsapp}`} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider py-3.5 px-4 rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 mobile-touch-active shadow-lg">
                                     <i className="fa-brands fa-whatsapp text-base"></i> Doğrudan WhatsApp
                                 </a>
                             </div>
@@ -383,18 +383,18 @@
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="bg-stitch-card stitch-border rounded-xl p-5 text-center space-y-2">
-                                <i className="fa-solid fa-plane-departure text-xl text-stitch-gold"></i>
+                            <div className="bg-stitch-card stitch-border rounded-xl p-6 text-center space-y-2 shadow-xl">
+                                <i className="fa-solid fa-plane-departure text-2xl text-stitch-gold"></i>
                                 <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">Havalimanı Transferi</h3>
                                 <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Zamanında ve konforlu karşılama ve ulaşım hizmetleri.</p>
                             </div>
-                            <div className="bg-stitch-card stitch-border rounded-xl p-5 text-center space-y-2">
-                                <i className="fa-solid fa-road text-xl text-stitch-gold"></i>
+                            <div className="bg-stitch-card stitch-border rounded-xl p-6 text-center space-y-2 shadow-xl">
+                                <i className="fa-solid fa-road text-2xl text-stitch-gold"></i>
                                 <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">Şehirler Arası Transfer</h3>
                                 <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Türkiye'nin her noktasına konforlu uzun yol seyahati.</p>
                             </div>
-                            <div className="bg-stitch-card stitch-border rounded-xl p-5 text-center space-y-2">
-                                <i className="fa-solid fa-crown text-xl text-stitch-gold"></i>
+                            <div className="bg-stitch-card stitch-border rounded-xl p-6 text-center space-y-2 shadow-xl">
+                                <i className="fa-solid fa-crown text-2xl text-stitch-gold"></i>
                                 <h3 className="font-bold text-xs font-montserrat uppercase tracking-wide text-white">Ultra VIP Hizmet</h3>
                                 <p className="text-[11px] text-stitch-text-muted font-light leading-snug">Kişiye özel, lüks donanımlı araçlarla üst düzey seyahat keyfi.</p>
                             </div>
@@ -402,25 +402,25 @@
                     </section>
 
                     {/* ARAÇLARIMIZ BÖLÜMÜ */}
-                    <section className="py-12 bg-stitch-card border-y border-neutral-900 px-4">
+                    <section className="py-12 bg-stitch-card border-y border-neutral-800 px-4 shadow-inner">
                         <div className="max-w-5xl w-full mx-auto">
                             <div className="text-center mb-8">
                                 <h2 className="text-lg font-bold font-montserrat tracking-wider uppercase text-white">ARAÇLARIMIZ</h2>
                                 <div className="w-8 h-0.5 bg-stitch-gold mx-auto mt-1.5"></div>
                             </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                                 {displayVehicles.map(v => (
-                                    <div key={v.id} className="bg-stitch-dark stitch-border rounded-xl p-3 flex flex-col sm:flex-row gap-4 items-center">
+                                    <div key={v.id} className="bg-stitch-dark stitch-border rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-center shadow-lg">
                                         <div className="w-full sm:w-2/5 aspect-[4/3] bg-neutral-900 rounded-lg overflow-hidden flex-shrink-0">
                                             <img src={v.image} className="w-full h-full object-cover" alt={v.name} onError={(e)=>{e.target.src='https://images.unsplash.com/photo-1549399542-7e3f8b79c341?q=80&w=500'}} />
                                         </div>
-                                        <div className="w-full sm:w-3/5 space-y-1.5 self-start sm:self-center">
-                                            <h3 className="font-bold font-montserrat text-xs text-stitch-gold uppercase tracking-wide">{v.name}</h3>
-                                            <ul className="text-[11px] text-stitch-text-muted space-y-1 font-light">
+                                        <div className="w-full sm:w-3/5 space-y-2 self-start sm:self-center">
+                                            <h3 className="font-bold font-montserrat text-xs text-stitch-gold uppercase tracking-wide border-b border-neutral-800 pb-1">{v.name}</h3>
+                                            <ul className="text-[11px] text-stitch-text-muted space-y-1.5 font-normal">
                                                 {v.description.split('\n').map((line, idx) => (
-                                                    <li key={idx} className="flex items-center gap-1.5 truncate">
-                                                        <i className="fa-regular fa-circle-check text-stitch-gold text-[9px]"></i> {line}
+                                                    <li key={idx} className="flex items-center gap-1.5 truncate text-white/90">
+                                                        <i className="fa-regular fa-circle-check text-stitch-gold text-[10px]"></i> {line}
                                                     </li>
                                                 ))}
                                             </ul>
@@ -433,7 +433,7 @@
 
                     {/* İLETİŞİM ALTI */}
                     <footer className="py-12 px-4 max-w-xl w-full mx-auto text-center space-y-4">
-                        <p className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest">
+                        <p className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
                             © 2026 VIP TRANSFER. TÜM HAKLARI SAKLIDIR.
                         </p>
                     </footer>
