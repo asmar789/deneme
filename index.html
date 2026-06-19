@@ -13,183 +13,77 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone@7.23.6/babel.min.js"></script>
 
-    <script id="tailwind-config">
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        "vip-bg": "#F8F9FA",
-                        "vip-card": "#FFFFFF",
-                        "vip-dark": "#1E2229",
-                        "vip-gold": "#C5A880",
-                        "vip-gold-hover": "#B3956D"
-                    }
-                }
-            }
-        }
-    </script>
-
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0A0B0D;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .font-montserrat {
-            font-family: 'Montserrat', sans-serif;
-        }
-        .animate-fade-in {
-            animation: fadeIn 0.6s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #0A0B0D; -webkit-tap-highlight-color: transparent; }
+        .font-montserrat { font-family: 'Montserrat', sans-serif; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
-
-        // Orijinal dosyadaki base64 arka plan resmi
-        const HERO_BG = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA=";
-
         function App() {
-            // Telefon ve başlık bilgileri sabitlendi
+            // İletişim bilgilerini buraya yaz usta
             const settings = {
-                phone: "+90 500 000 00 00", // Buraya kendi numaranı yazabilirsin
-                whatsapp: "+90 500 000 00 00",
-                title: "VIP Transfer"
+                phone: "+90 500 000 00 00",
+                whatsapp: "+90 500 000 00 00"
             };
 
-            // Araç listesi doğrudan GitHub'daki görselleri görecek şekilde ayarlandı
+            // Araç listesi (Burada image kısmına GitHub'a yükleyeceğin resim adlarını yaz)
             const vehicles = [
                 {
-                    id: "vito-vip",
+                    id: 1,
                     name: "Mercedes-Benz Vito VIP",
-                    description: "Ultra lüks iç tasarım, geniş iç hacim, deri koltuklar ve multimedya sistemi ile kusursuz konfor.",
-                    image: "araba1.jpg" // GitHub'a yükleyeceğin 1. görselin ismi
+                    description: "Ultra lüks iç tasarım ve kusursuz konfor.",
+                    image: "araba1.jpg" 
                 },
                 {
-                    id: "transporter-vip",
+                    id: 2,
                     name: "Volkswagen Transporter VIP",
-                    description: "Özel seyahatleriniz için tasarlanmış, konforlu ve tam donanımlı lüks VIP araç.",
-                    image: "araba2.jpg" // GitHub'a yükleyeceğin 2. görselin ismi
+                    description: "Özel seyahatleriniz için lüks donanım.",
+                    image: "araba2.jpg"
                 }
             ];
 
-            const cleanPhone = settings.phone ? settings.phone.replace(/\s+/g, '') : '';
-            const whatsappText = encodeURIComponent("Merhaba, VIP transfer hizmetiniz hakkında bilgi alabilir miyim?");
-            const cleanWhatsapp = settings.whatsapp ? settings.whatsapp.replace(/\s+/g, '').replace('+', '') : '';
+            const cleanPhone = settings.phone.replace(/\s+/g, '');
+            const cleanWhatsapp = settings.whatsapp.replace(/\s+/g, '').replace('+', '');
 
             return (
-                <div className="min-h-screen text-white p-4 max-w-md mx-auto font-inter bg-[#0A0B0D] pb-24 animate-fade-in">
-                    
-                    {/* Header */}
+                <div className="min-h-screen text-white p-4 max-w-md mx-auto bg-[#0A0B0D] pb-24">
                     <header className="flex justify-between items-center py-4 border-b border-white/5">
-                        <div>
-                            <h1 className="font-montserrat font-black text-2xl tracking-wider text-white">
-                                VIP <span className="text-vip-gold">TRANSFER</span>
-                            </h1>
-                            <p className="text-[10px] text-white/40 tracking-[0.2em] uppercase font-medium">Lüks & Güvenilir Ulaşım</p>
-                        </div>
+                        <h1 className="font-montserrat font-black text-2xl text-white">VIP <span className="text-[#C5A880]">TRANSFER</span></h1>
                     </header>
 
-                    {/* Hero Section */}
-                    <div 
-                        className="relative h-56 rounded-2xl overflow-hidden my-6 bg-cover bg-center flex flex-col justify-end p-6 border border-white/5 shadow-2xl"
-                        style={{ backgroundImage: `linear-gradient(to bottom, rgba(10,11,13,0.2), #0A0B0D), url(${HERO_BG})` }}
-                    >
-                        <span className="text-vip-gold text-xs font-bold tracking-[0.2em] uppercase mb-1">Ayrıcalıklı Yolculuk</span>
-                        <h2 className="font-montserrat font-black text-2xl leading-tight text-white">Konforlu ve Güvenli VIP Seyahat Deneyimi</h2>
+                    <div className="my-6 h-56 rounded-2xl bg-black border border-white/10 flex flex-col justify-end p-6">
+                        <h2 className="font-montserrat font-black text-2xl text-white">Konforlu VIP Seyahat</h2>
                     </div>
 
-                    {/* Vehicles Grid */}
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-center">
-                            <h3 className="font-montserrat font-bold text-sm tracking-wider text-white/40 uppercase">Filomuz</h3>
-                            <span className="text-[11px] text-vip-gold bg-vip-gold/10 px-2.5 py-1 rounded-full font-medium border border-vip-gold/20">
-                                {vehicles.length} Araç Aktif
-                            </span>
-                        </div>
-
-                        <div className="grid gap-6">
-                            {vehicles.map((vehicle) => (
-                                <div key={vehicle.id} className="bg-[#13151A] rounded-2xl overflow-hidden border border-white/[0.03] transition-all duration-300 hover:border-vip-gold/30 group">
-                                    <div className="relative h-52 bg-[#1A1D24] overflow-hidden">
-                                        <img 
-                                            src={vehicle.image} 
-                                            alt={vehicle.name}
-                                            className="w-full height-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                            onError={(e) => {
-                                                // Görsel GitHub'da bulunamazsa otomatik devreye giren şık yedek alan
-                                                e.target.style.display = 'none';
-                                                e.target.nextSibling.style.display = 'flex';
-                                            }}
-                                        />
-                                        <div className="hidden absolute inset-0 flex-col items-center justify-center bg-[#1A1D24] text-white/20 gap-2">
-                                            <i className="fa-solid fa-car text-4xl text-vip-gold/40"></i>
-                                            <span className="text-xs font-medium text-white/40">Görsel Yükleniyor...</span>
-                                        </div>
-                                    </div>
-                                    <div className="p-5">
-                                        <h4 className="font-montserrat font-bold text-xl text-white group-hover:text-vip-gold transition-colors">{vehicle.name}</h4>
-                                        <p className="text-sm text-white/50 mt-1.5 leading-relaxed font-light">{vehicle.description}</p>
-                                        
-                                        <div className="flex gap-3 mt-5">
-                                            <a 
-                                                href={`https://wa.me/${cleanWhatsapp}?text=${whatsappText}`}
-                                                className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs tracking-wider py-3.5 rounded-xl transition-all shadow-lg shadow-[#25D366]/10 active:scale-[0.98]"
-                                            >
-                                                <i className="fa-brands fa-whatsapp text-base"></i> WHATSAPP İLE REZERVASYON
-                                            </a>
-                                        </div>
-                                    </div>
+                    <div className="grid gap-6">
+                        {vehicles.map((v) => (
+                            <div key={v.id} className="bg-[#13151A] rounded-2xl overflow-hidden border border-white/5">
+                                <img src={v.image} alt={v.name} className="w-full h-52 object-cover" />
+                                <div className="p-5">
+                                    <h4 className="font-bold text-xl">{v.name}</h4>
+                                    <p className="text-sm text-white/50 mt-1">{v.description}</p>
+                                    <a href={`https://wa.me/${cleanWhatsapp}`} className="block mt-5 text-center bg-[#25D366] py-3 rounded-xl font-bold text-sm">
+                                        <i className="fa-brands fa-whatsapp mr-2"></i> REZERVASYON
+                                    </a>
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        ))}
                     </div>
 
-                    {/* Contact CTA */}
-                    <div className="mt-12 bg-[#13151A] rounded-2xl p-8 border border-vip-gold/10 text-center relative overflow-hidden">
-                        <div className="absolute -right-8 -bottom-8 text-white/[0.01] text-9xl pointer-events-none">
-                            <i className="fa-solid fa-phone"></i>
-                        </div>
-                        <div className="w-12 h-12 bg-vip-gold/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-vip-gold/20">
-                            <i className="fa-solid fa-phone text-vip-gold text-lg"></i>
-                        </div>
-                        <h3 className="text-lg font-bold font-montserrat text-white tracking-wide">İletişime Geçin</h3>
-                        <p className="text-xs text-white/50 mt-1 max-w-[280px] mx-auto leading-relaxed">Sormak istediğiniz tüm sorular için bir telefon uzağınızdayız.</p>
-                        <div className="mt-5">
-                            <a 
-                                href={`tel:${cleanPhone}`}
-                                className="inline-block bg-vip-gold/10 hover:bg-vip-gold/20 border border-vip-gold/40 text-vip-gold font-bold text-xs tracking-[0.15em] uppercase px-8 py-3.5 rounded-full transition-all active:scale-[0.98]"
-                            >
-                                HEMEN ARA
-                            </a>
-                        </div>
+                    <div className="mt-12 p-8 bg-[#13151A] rounded-2xl border border-[#C5A880]/20 text-center">
+                        <h3 className="font-bold text-lg">İletişime Geçin</h3>
+                        <a href={`tel:${cleanPhone}`} className="block mt-4 bg-[#C5A880]/20 text-[#C5A880] py-3 rounded-full font-bold uppercase text-xs">
+                            Hemen Ara
+                        </a>
                     </div>
-
-                    {/* Footer */}
-                    <footer className="mt-12 text-center text-white/20">
-                        <p className="text-[10px] font-bold tracking-[0.2em] uppercase">© 2026 VIP TRANSFER. TÜM HAKLARI SAKLIDIR.</p>
-                    </footer>
                 </div>
             );
         }
 
-        const container = document.getElementById('root');
-        const root = ReactDOM.createRoot(container);
+        const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
